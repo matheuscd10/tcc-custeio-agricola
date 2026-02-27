@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { PessoaModule } from './pessoa/pessoa.module.js';
 import { BancoModule } from './banco/banco.module.js';
 import { OperacaoModule } from './operacao/operacao.module.js';
+import { CusteioModule } from './custeio/custeio.module.js';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { OperacaoModule } from './operacao/operacao.module.js';
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_DATABASE', 'custeio_agricola'),
         autoLoadEntities: true,
-        synchronize: true, // Apenas em desenvolvimento! Desabilitar em produção.
+        synchronize: true,
       }),
     }),
 
@@ -33,6 +34,7 @@ import { OperacaoModule } from './operacao/operacao.module.js';
     PessoaModule,
     BancoModule,
     OperacaoModule,
+    CusteioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
