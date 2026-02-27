@@ -5,6 +5,8 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PessoaModule } from './pessoa/pessoa.module.js';
+import { BancoModule } from './banco/banco.module.js';
+import { OperacaoModule } from './operacao/operacao.module.js';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { PessoaModule } from './pessoa/pessoa.module.js';
 
     AuthModule,
     PessoaModule,
+    BancoModule,
+    OperacaoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
