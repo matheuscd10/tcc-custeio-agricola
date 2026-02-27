@@ -8,6 +8,7 @@ import { PessoaModule } from './pessoa/pessoa.module.js';
 import { BancoModule } from './banco/banco.module.js';
 import { OperacaoModule } from './operacao/operacao.module.js';
 import { CusteioModule } from './custeio/custeio.module.js';
+import { RelatorioModule } from './relatorio/relatorio.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CusteioModule } from './custeio/custeio.module.js';
     BancoModule,
     OperacaoModule,
     CusteioModule,
+    RelatorioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
