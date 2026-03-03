@@ -1,7 +1,9 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <!-- Header -->
+    <q-header elevated class="bg-primary text-white">
       <q-toolbar>
+        <!-- Toggler para mostrar/esconder o menu lateral (apenas Desktop) -->
         <q-btn
           flat
           dense
@@ -9,94 +11,104 @@
           icon="menu"
           aria-label="Menu"
           @click="toggleLeftDrawer"
+          v-if="$q.screen.gt.sm"
         />
 
-        <q-toolbar-title>
-          Quasar App
+        <q-toolbar-title class="text-weight-bold">
+          <q-icon name="agriculture" size="md" class="q-mr-sm" />
+          Custeio Agrícola
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <q-btn flat round icon="account_circle" />
       </q-toolbar>
     </q-header>
 
+    <!-- Desktop Sidebar (Left Drawer) -->
     <q-drawer
       v-model="leftDrawerOpen"
       show-if-above
       bordered
+      :width="250"
+      class="bg-white"
+      v-if="$q.screen.gt.sm"
     >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
+      <q-list class="q-pa-md">
+        <q-item-label header class="text-weight-bold text-uppercase text-grey-6">
+          Navegação
         </q-item-label>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
+        <q-item clickable v-ripple to="/" exact active-class="bg-green-1 text-primary text-weight-bold" class="rounded-borders q-mb-xs">
+          <q-item-section avatar>
+            <q-icon name="dashboard" />
+          </q-item-section>
+          <q-item-section>Dashboard</q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple to="/lancamentos" active-class="bg-green-1 text-primary text-weight-bold" class="rounded-borders q-mb-xs">
+          <q-item-section avatar>
+            <q-icon name="list_alt" />
+          </q-item-section>
+          <q-item-section>Lançamentos</q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple to="/relatorios" active-class="bg-green-1 text-primary text-weight-bold" class="rounded-borders q-mb-xs">
+          <q-item-section avatar>
+            <q-icon name="bar_chart" />
+          </q-item-section>
+          <q-item-section>Relatórios</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
+    <!-- Main Content -->
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <!-- Mobile Bottom Navigation (Tabs) -->
+    <q-footer bordered class="bg-white text-primary" v-if="$q.screen.lt.md">
+      <q-tabs 
+        no-caps 
+        active-color="primary" 
+        indicator-color="transparent" 
+        class="text-grey-7" 
+        v-model="tab"
+      >
+        <q-route-tab to="/" exact name="dashboard" icon="dashboard" label="Dashboard" />
+        <q-route-tab to="/lancamentos" name="lancamentos" icon="list_alt" label="Lançamentos" />
+        <q-route-tab to="/relatorios" name="relatorios" icon="bar_chart" label="Relatórios" />
+      </q-tabs>
+    </q-footer>
+
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
+import { ref, watch } from 'vue';
+import { useQuasar } from 'quasar';
 
-const linksList: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-];
-
+const $q = useQuasar();
 const leftDrawerOpen = ref(false);
+const tab = ref('dashboard');
 
-function toggleLeftDrawer () {
+function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
+
+// Garante que o menu lateral fique oculto em telas mobile (sm e xs)
+watch(() => $q.screen.gt.sm, (isDesktop) => {
+  if (!isDesktop) {
+    leftDrawerOpen.value = false;
+  }
+}, { immediate: true });
 </script>
+
+<style lang="scss">
+.q-drawer {
+  .q-item.q-router-link--exact-active {
+    .q-icon {
+      color: $primary;
+    }
+  }
+}
+</style>
