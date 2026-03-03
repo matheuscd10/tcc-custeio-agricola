@@ -19,7 +19,20 @@
           Custeio Agrícola
         </q-toolbar-title>
 
-        <q-btn flat round icon="account_circle" />
+        <q-btn flat round icon="account_circle">
+          <q-menu>
+            <q-list style="min-width: 150px">
+              <q-item clickable v-close-popup @click="fazerLogout">
+                <q-item-section avatar>
+                  <q-icon name="logout" color="negative" />
+                </q-item-section>
+                <q-item-section class="text-negative text-weight-bold">
+                  Sair
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -86,13 +99,30 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
+import { useRouter } from 'vue-router';
 
 const $q = useQuasar();
+const router = useRouter();
+
 const leftDrawerOpen = ref(false);
 const tab = ref('dashboard');
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+function fazerLogout() {
+  // Remove token
+  localStorage.removeItem('access_token');
+  
+  $q.notify({
+    type: 'info',
+    message: 'Conta desconectada.',
+    position: 'top',
+  });
+  
+  // Redireciona pro Login
+  router.push('/login');
 }
 
 // Garante que o menu lateral fique oculto em telas mobile (sm e xs)

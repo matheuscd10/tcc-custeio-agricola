@@ -24,11 +24,22 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   const Router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
     routes,
-
-    // Leave this as is and make changes in quasar.conf.js instead!
-    // quasar.conf.js -> build -> vueRouterMode
-    // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  });
+
+  // Global Navigation Guard para proteger as rotas
+  Router.beforeEach((to, from, next) => {
+    const isAuthenticated = !!localStorage.getItem('access_token');
+
+    if (to.path !== '/login' && !isAuthenticated) {
+      // Se tentar acessar rota protegida sem estar logado -> vai pro login
+      next('/login');
+    } else if (to.path === '/login' && isAuthenticated) {
+      // Se tentar ir pro login já estando logado -> vai pra raiz
+      next('/');
+    } else {
+      next(); // Tudo certo, pode seguir
+    }
   });
 
   return Router;
