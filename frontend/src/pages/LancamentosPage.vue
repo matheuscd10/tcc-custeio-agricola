@@ -35,13 +35,14 @@
         <div class="col-12 col-md-8 text-center">
           <div class="text-subtitle1 text-grey-7 q-mb-sm">Valor (R$)</div>
           <q-input
-            v-model="formValue[tab].valor"
+            v-model="formValue[tab].valorTotal"
             type="number"
             class="text-h3 text-weight-bolder"
             input-class="text-center text-dark"
             borderless
             placeholder="0,00"
             autofocus
+            :disable="carregandoOpcoes"
           />
           <q-separator class="q-mt-sm" :color="tab === 'despesa' ? 'negative' : 'primary'" size="2px" />
         </div>
@@ -63,13 +64,15 @@
         <!-- Categoria -->
         <div class="col-12">
           <q-select 
-            v-model="formValue[tab].categoriaId" 
+            v-model="formValue[tab].operacaoId" 
             outlined 
             :options="opcoesCategoria" 
             label="Categoria" 
             emit-value 
             map-options 
             bg-color="white"
+            :loading="carregandoOpcoes"
+            :disable="carregandoOpcoes"
           />
         </div>
 
@@ -125,13 +128,15 @@
           <q-slide-transition>
             <div v-if="formValue[tab].jaPago" class="q-mt-md">
               <q-select 
-                v-model="formValue[tab].contaBancariaId" 
+                v-model="formValue[tab].dadosBancariosId" 
                 outlined 
                 :options="opcoesConta" 
                 label="Conta Bancária" 
                 emit-value 
                 map-options 
                 bg-color="white"
+                :loading="carregandoOpcoes"
+                :disable="carregandoOpcoes"
               />
             </div>
           </q-slide-transition>
@@ -153,40 +158,45 @@
         unelevated
         rounded
         @click="salvarLancamento"
+        :loading="carregando"
+        :disable="carregandoOpcoes"
       />
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
+import { api } from '../services/api';
 
 const $q = useQuasar();
 
 const tab = ref<'despesa' | 'receita'>('despesa');
+const carregando = ref(false); // loading do botão salvar
+const carregandoOpcoes = ref(true); // loading da tela inicial
 
 // Objeto reativo para os formulários simulando os DTOs do backend
 const formDespesa = ref({
-  valor: null,
+  valorTotal: null as number | null,
   descricao: '',
-  categoriaId: null,
-  pessoaId: null,
+  operacaoId: null as number | null, // categoria
+  pessoaId: null as number | null,
   dataEmissao: new Date().toISOString().split('T')[0],
   dataVencimento: new Date().toISOString().split('T')[0],
   jaPago: false,
-  contaBancariaId: null,
+  dadosBancariosId: null as number | null, // conta bancaria para baixa
 });
 
 const formReceita = ref({
-  valor: null,
+  valorTotal: null as number | null,
   descricao: '',
-  categoriaId: null,
-  pessoaId: null,
+  operacaoId: null as number | null, // categoria
+  pessoaId: null as number | null,
   dataEmissao: new Date().toISOString().split('T')[0],
   dataVencimento: new Date().toISOString().split('T')[0],
   jaPago: false,
-  contaBancariaId: null,
+  dadosBancariosId: null as number | null, // conta bancaria para baixa
 });
 
 // Acesso dinâmico baseado na aba selecionada
@@ -197,35 +207,173 @@ const formValue = computed(() => {
   };
 });
 
-// DADOS MOCKADOS para os selects
-const opcoesCategoria = [
-  { label: 'Insumos / Fertilizantes', value: 1 },
-  { label: 'Sementes', value: 2 },
-  { label: 'Venda Agrícola', value: 3 },
-  { label: 'Manutenção de Máquinas', value: 4 },
-];
+// Ref's para armazenar os dados dos selects (dropdowns)
+const opcoesCategoria = ref<{ label: string; value: number }[]>([]);
+const opcoesPessoa = ref<{ label: string; value: number }[]>([]);
+const opcoesConta = ref<{ label: string; value: number }[]>([]);
 
-const opcoesPessoa = [
-  { label: 'Agro Insumos Ltda', value: 1 },
-  { label: 'Cooperativa Agrícola Regional', value: 2 },
-  { label: 'João Silva (Fazendeiro)', value: 3 },
-];
+// Carregamento de dados base via API
+const carregarOpcoes = async () => {
+  try {
+    carregandoOpcoes.value = true;
+    
+    // Dispara requests simultâneos
+    const [resPessoas, resOperacoes, resBancos] = await Promise.all([
+      api.get('/pessoas'),
+      api.get('/operacoes'),
+      api.get('/bancos/dados-bancarios'),
+    ]);
 
-const opcoesConta = [
-  { label: 'Banco do Brasil - C/C 12345-6', value: 1 },
-  { label: 'Sicredi - C/C 9876-0', value: 2 },
-];
+    // Mapeamento para { label, value } do Quasar Select
+    opcoesPessoa.value = resPessoas.data.map((p: any) => ({
+      label: p.nome || p.pessoaJuridica?.razaoSocial || p.pessoaFisica?.cpf,
+      value: p.id,
+    }));
 
-const salvarLancamento = () => {
+    opcoesCategoria.value = resOperacoes.data.map((o: any) => ({
+      label: o.descricao,
+      value: o.id,
+    }));
+
+    // Mostra Banco + Conta nas opções
+    opcoesConta.value = resBancos.data.map((cc: any) => ({
+      label: `${cc.banco?.nome || 'Banco'} - Ag: ${cc.agencia} / CC: ${cc.conta}`,
+      value: cc.id,
+    }));
+
+  } catch (error) {
+    console.error('Erro ao carregar opções do formulário:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Falha ao carregar opções (Pessoas, Categorias, Contatos).',
+      position: 'top',
+    });
+  } finally {
+    carregandoOpcoes.value = false;
+  }
+};
+
+onMounted(() => {
+  carregarOpcoes();
+});
+
+const limparFormulario = () => {
+  const isDespesa = tab.value === 'despesa';
+  const dataHoje = new Date().toISOString().split('T')[0];
+
+  if (isDespesa) {
+    formDespesa.value = {
+      valorTotal: null,
+      descricao: '',
+      operacaoId: null,
+      pessoaId: null,
+      dataEmissao: dataHoje,
+      dataVencimento: dataHoje,
+      jaPago: false,
+      dadosBancariosId: null,
+    };
+  } else {
+    formReceita.value = {
+      valorTotal: null,
+      descricao: '',
+      operacaoId: null,
+      pessoaId: null,
+      dataEmissao: dataHoje,
+      dataVencimento: dataHoje,
+      jaPago: false,
+      dadosBancariosId: null,
+    };
+  }
+};
+
+const salvarLancamento = async () => {
   const dados = formValue.value[tab.value];
-  console.log(`Salvando ${tab.value}:`, dados);
+  const isDespesa = tab.value === 'despesa';
   
-  $q.notify({
-    type: tab.value === 'despesa' ? 'negative' : 'positive',
-    message: `${tab.value === 'despesa' ? 'Despesa' : 'Receita'} salva com sucesso!`,
-    position: 'top',
-    icon: 'check_circle'
-  });
+  // Validações básicas
+  if (!dados.valorTotal || dados.valorTotal <= 0) {
+    $q.notify({ type: 'warning', message: 'Informe um valor da transação válido.', position: 'top' });
+    return;
+  }
+  if (!dados.descricao || !dados.operacaoId || !dados.pessoaId) {
+    $q.notify({ type: 'warning', message: 'Preencha todos os campos obrigatórios (Descrição, Categoria, Pessoa).', position: 'top' });
+    return;
+  }
+  if (dados.jaPago && !dados.dadosBancariosId) {
+    $q.notify({ type: 'warning', message: 'Selecione a conta bancária para confirmar o pagamento.', position: 'top' });
+    return;
+  }
+
+  carregando.value = true;
+  
+  try {
+    // 1. Payload de Criação (Titulo)
+    const payloadTitulo = {
+      descricao: dados.descricao,
+      pessoaId: dados.pessoaId,
+      operacaoId: dados.operacaoId,
+      valorTotal: Number(dados.valorTotal),
+      dataEmissao: dados.dataEmissao + 'T00:00:00.000Z',
+      dataVencimento: dados.dataVencimento + 'T00:00:00.000Z',
+      anexos: [], // Mock array vazio se obrigatorio na API
+      observacoes: '',
+      // Se quiser passar parcelas (Módulo 4 pede array em Titulo), mandamos o valor total numa parcela unica (id 1 = Dinheiro/Padrao)
+      parcelas: [
+        {
+          valorParcela: Number(dados.valorTotal),
+          dataVencimento: dados.dataVencimento + 'T00:00:00.000Z',
+          tipoValorFinanceiroId: 1 // TODO: Buscar dinamicamente se necessário, fixando 1 para simplificar o MVP
+        }
+      ]
+    };
+
+    let tituloCriadoId: number;
+    
+    if (isDespesa) {
+      // POST Despesa
+      const res = await api.post('/titulos-pagar', payloadTitulo);
+      tituloCriadoId = res.data.id;
+    } else {
+      // POST Receita
+      const res = await api.post('/titulos-receber', payloadTitulo);
+      tituloCriadoId = res.data.id;
+    }
+
+    // 2. Rotina de Baixa Automática (se já foi pago)
+    if (dados.jaPago && dados.dadosBancariosId) {
+      const payloadBaixa = {
+        dataPagamento: new Date().toISOString(), // hora atual
+        valorPago: Number(dados.valorTotal),
+        juros: 0,
+        multa: 0,
+        desconto: 0,
+        dadosBancariosId: dados.dadosBancariosId,
+        observacoes: 'Baixa automática gerada na tela de lançamento'
+      };
+
+      if (isDespesa) {
+        await api.post(`/baixas/pagar`, { ...payloadBaixa, tituloPagarId: tituloCriadoId });
+      } else {
+        await api.post(`/baixas/receber`, { ...payloadBaixa, tituloReceberId: tituloCriadoId });
+      }
+    }
+
+    $q.notify({
+      type: isDespesa ? 'negative' : 'positive',
+      message: `${isDespesa ? 'Despesa' : 'Receita'} salva com sucesso!`,
+      position: 'top',
+      icon: 'check_circle'
+    });
+
+    limparFormulario();
+
+  } catch (error: any) {
+    console.error('Erro ao salvar lançamento:', error);
+    const msg = error.response?.data?.message || 'Erro inesperado na gravação.';
+    $q.notify({ type: 'negative', message: `Erro ao salvar: ${msg}`, position: 'top' });
+  } finally {
+    carregando.value = false;
+  }
 };
 </script>
 
