@@ -182,7 +182,16 @@ const resumo = ref({
   totalTitulosReceber: 0,
 });
 
-const transacoes = ref<any[]>([]);
+interface ItemTransacao {
+  id: number;
+  tipo: 'RECEITA' | 'DESPESA';
+  descricao: string;
+  dataEmissao: string;
+  pessoaNome?: string;
+  valorTotal: number;
+}
+
+const transacoes = ref<ItemTransacao[]>([]);
 
 // Hook onMounted para buscar os dados quando a página carrega
 onMounted(async () => {
@@ -205,7 +214,7 @@ onMounted(async () => {
     resumo.value = resDashboard.data;
     transacoes.value = resFluxo.data.dados;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao buscar dados da dashboard:', error);
     $q.notify({
       type: 'negative',

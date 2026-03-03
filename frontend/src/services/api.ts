@@ -14,7 +14,7 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
+    (error: unknown) => {
+        return Promise.reject(error instanceof Error ? error : new Error(String(error)));
     }
 );

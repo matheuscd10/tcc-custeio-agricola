@@ -122,7 +122,7 @@ function fazerLogout() {
   });
   
   // Redireciona pro Login
-  router.push('/login');
+  void router.push('/login');
 }
 
 // Garante que o menu lateral fique oculto em telas mobile (sm e xs)

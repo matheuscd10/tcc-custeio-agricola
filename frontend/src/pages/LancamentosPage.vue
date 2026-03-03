@@ -212,6 +212,23 @@ const opcoesCategoria = ref<{ label: string; value: number }[]>([]);
 const opcoesPessoa = ref<{ label: string; value: number }[]>([]);
 const opcoesConta = ref<{ label: string; value: number }[]>([]);
 
+interface PayloadPessoa {
+  id: number;
+  nome?: string;
+  pessoaJuridica?: { razaoSocial: string };
+  pessoaFisica?: { cpf: string };
+}
+interface PayloadOperacao {
+  id: number;
+  descricao: string;
+}
+interface PayloadBanco {
+  id: number;
+  banco?: { nome: string };
+  agencia: string;
+  conta: string;
+}
+
 // Carregamento de dados base via API
 const carregarOpcoes = async () => {
   try {
@@ -225,18 +242,18 @@ const carregarOpcoes = async () => {
     ]);
 
     // Mapeamento para { label, value } do Quasar Select
-    opcoesPessoa.value = resPessoas.data.map((p: any) => ({
-      label: p.nome || p.pessoaJuridica?.razaoSocial || p.pessoaFisica?.cpf,
+    opcoesPessoa.value = resPessoas.data.map((p: PayloadPessoa) => ({
+      label: p.nome || p.pessoaJuridica?.razaoSocial || p.pessoaFisica?.cpf || 'Desconhecido',
       value: p.id,
     }));
 
-    opcoesCategoria.value = resOperacoes.data.map((o: any) => ({
+    opcoesCategoria.value = resOperacoes.data.map((o: PayloadOperacao) => ({
       label: o.descricao,
       value: o.id,
     }));
 
     // Mostra Banco + Conta nas opções
-    opcoesConta.value = resBancos.data.map((cc: any) => ({
+    opcoesConta.value = resBancos.data.map((cc: PayloadBanco) => ({
       label: `${cc.banco?.nome || 'Banco'} - Ag: ${cc.agencia} / CC: ${cc.conta}`,
       value: cc.id,
     }));
@@ -254,7 +271,7 @@ const carregarOpcoes = async () => {
 };
 
 onMounted(() => {
-  carregarOpcoes();
+  void carregarOpcoes();
 });
 
 const limparFormulario = () => {
@@ -367,9 +384,9 @@ const salvarLancamento = async () => {
 
     limparFormulario();
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao salvar lançamento:', error);
-    const msg = error.response?.data?.message || 'Erro inesperado na gravação.';
+    const msg = (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Erro inesperado na gravação.';
     $q.notify({ type: 'negative', message: `Erro ao salvar: ${msg}`, position: 'top' });
   } finally {
     carregando.value = false;

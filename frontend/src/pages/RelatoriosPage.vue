@@ -140,7 +140,18 @@ const filtroDataFim = ref('');
 
 // Estado Reativo Real
 const carregando = ref(true);
-const transacoes = ref<any[]>([]);
+interface ItemTransacaoRelatorio {
+  id: number;
+  tipo: 'RECEITA' | 'DESPESA';
+  descricao: string;
+  dataEmissao: string;
+  pessoaNome?: string;
+  operacaoDescricao?: string;
+  valorTotal: number;
+  status: 'PAGO' | 'ABERTO' | 'PARCIAL';
+}
+
+const transacoes = ref<ItemTransacaoRelatorio[]>([]);
 const totais = ref({
   receitas: 0,
   despesas: 0,
@@ -152,7 +163,7 @@ const buscarFluxoCaixa = async () => {
   carregando.value = true;
   try {
     // Monta a querystring para os filtros do Backend (Módulo 5)
-    const params: any = {};
+    const params: Record<string, string> = {};
     
     // Mapeamento do label da Tela para o Enum do Backend
     if (filtroTipo.value === 'Receitas') params.tipo = 'RECEITA';
@@ -170,7 +181,7 @@ const buscarFluxoCaixa = async () => {
     transacoes.value = response.data.dados;
     totais.value = response.data.totais;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao buscar fluxo de caixa:', error);
     $q.notify({
       type: 'negative',
@@ -184,11 +195,11 @@ const buscarFluxoCaixa = async () => {
 
 // Dispara a busca automática cada vez que um filtro é modificado na tela
 watch([filtroTipo, filtroDataInicio, filtroDataFim], () => {
-  buscarFluxoCaixa();
+  void buscarFluxoCaixa();
 });
 
 onMounted(() => {
-  buscarFluxoCaixa();
+  void buscarFluxoCaixa();
 });
 
 // Helpers Visuais

@@ -108,13 +108,13 @@ const fazerLogin = async () => {
     });
 
     // Redireciona para a raiz (Dashboard protegida)
-    router.push('/');
+    void router.push('/');
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro no login:', error);
     
     // Mostra erro caso o backend retorne 401 ou erro genérico
-    const mensagemErro = error.response?.data?.message || 'E-mail ou senha inválidos. Tente novamente.';
+    const mensagemErro = (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'E-mail ou senha inválidos. Tente novamente.';
     
     $q.notify({
       type: 'negative',
