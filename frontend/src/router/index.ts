@@ -28,18 +28,19 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   });
 
   // Global Navigation Guard para proteger as rotas
-  Router.beforeEach((to, from, next) => {
+  Router.beforeEach((to) => {
     const isAuthenticated = !!localStorage.getItem('access_token');
 
     if (to.path !== '/login' && !isAuthenticated) {
       // Se tentar acessar rota protegida sem estar logado -> vai pro login
-      next('/login');
+      return '/login';
     } else if (to.path === '/login' && isAuthenticated) {
       // Se tentar ir pro login já estando logado -> vai pra raiz
-      next('/');
-    } else {
-      next(); // Tudo certo, pode seguir
+      return '/';
     }
+
+    // Tudo certo, pode seguir
+    return true;
   });
 
   return Router;

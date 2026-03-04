@@ -95,10 +95,10 @@ const fazerLogin = async () => {
       senha: senha.value,
     });
 
-    const { access_token } = response.data;
+    const { accessToken } = response.data;
 
     // Salva o token no storage do browser
-    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('access_token', accessToken);
 
     $q.notify({
       type: 'positive',

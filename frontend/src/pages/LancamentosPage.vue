@@ -238,7 +238,7 @@ const carregarOpcoes = async () => {
     const [resPessoas, resOperacoes, resBancos] = await Promise.all([
       api.get('/pessoas'),
       api.get('/operacoes'),
-      api.get('/bancos/dados-bancarios'),
+      api.get('/bancos/dados-bancarios/todos'),
     ]);
 
     // Mapeamento para { label, value } do Quasar Select
@@ -332,14 +332,11 @@ const salvarLancamento = async () => {
       valorTotal: Number(dados.valorTotal),
       dataEmissao: dados.dataEmissao + 'T00:00:00.000Z',
       dataVencimento: dados.dataVencimento + 'T00:00:00.000Z',
-      anexos: [], // Mock array vazio se obrigatorio na API
-      observacoes: '',
-      // Se quiser passar parcelas (Módulo 4 pede array em Titulo), mandamos o valor total numa parcela unica (id 1 = Dinheiro/Padrao)
-      parcelas: [
+      observacao: '',
+      valores: [
         {
-          valorParcela: Number(dados.valorTotal),
-          dataVencimento: dados.dataVencimento + 'T00:00:00.000Z',
-          tipoValorFinanceiroId: 1 // TODO: Buscar dinamicamente se necessário, fixando 1 para simplificar o MVP
+          valor: Number(dados.valorTotal),
+          dataVencimento: dados.dataVencimento + 'T00:00:00.000Z'
         }
       ]
     };
@@ -358,20 +355,25 @@ const salvarLancamento = async () => {
 
     // 2. Rotina de Baixa Automática (se já foi pago)
     if (dados.jaPago && dados.dadosBancariosId) {
-      const payloadBaixa = {
-        dataPagamento: new Date().toISOString(), // hora atual
-        valorPago: Number(dados.valorTotal),
-        juros: 0,
-        multa: 0,
-        desconto: 0,
-        dadosBancariosId: dados.dadosBancariosId,
-        observacoes: 'Baixa automática gerada na tela de lançamento'
-      };
 
       if (isDespesa) {
-        await api.post(`/baixas/pagar`, { ...payloadBaixa, tituloPagarId: tituloCriadoId });
+        const payloadBaixaPagar = {
+          tituloId: tituloCriadoId,
+          valorPago: Number(dados.valorTotal),
+          dataPagamento: new Date().toISOString(),
+          dadosBancariosId: dados.dadosBancariosId,
+          observacao: 'Baixa automática gerada na tela de lançamento'
+        };
+        await api.post(`/baixas/pagar`, payloadBaixaPagar);
       } else {
-        await api.post(`/baixas/receber`, { ...payloadBaixa, tituloReceberId: tituloCriadoId });
+        const payloadBaixaReceber = {
+          tituloId: tituloCriadoId,
+          valorRecebido: Number(dados.valorTotal),
+          dataRecebimento: new Date().toISOString(),
+          dadosBancariosId: dados.dadosBancariosId,
+          observacao: 'Baixa automática gerada na tela de lançamento'
+        };
+        await api.post(`/baixas/receber`, payloadBaixaReceber);
       }
     }
 

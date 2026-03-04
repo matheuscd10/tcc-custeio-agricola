@@ -11,7 +11,6 @@
           icon="menu"
           aria-label="Menu"
           @click="toggleLeftDrawer"
-          v-if="$q.screen.gt.sm"
         />
 
         <q-toolbar-title class="text-weight-bold">
@@ -43,7 +42,6 @@
       bordered
       :width="250"
       class="bg-white"
-      v-if="$q.screen.gt.sm"
     >
       <q-list class="q-pa-md">
         <q-item-label header class="text-weight-bold text-uppercase text-grey-6">
@@ -69,6 +67,26 @@
             <q-icon name="bar_chart" />
           </q-item-section>
           <q-item-section>Relatórios</q-item-section>
+        </q-item>
+
+        <q-separator class="q-my-md"/>
+
+        <q-item-label header class="text-weight-bold text-uppercase text-grey-6">
+          Cadastros
+        </q-item-label>
+
+        <q-item clickable v-ripple to="/categorias" active-class="bg-green-1 text-primary text-weight-bold" class="rounded-borders q-mb-xs">
+          <q-item-section avatar>
+            <q-icon name="category" />
+          </q-item-section>
+          <q-item-section>Categorias</q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple to="/pessoas" active-class="bg-green-1 text-primary text-weight-bold" class="rounded-borders q-mb-xs">
+          <q-item-section avatar>
+            <q-icon name="people" />
+          </q-item-section>
+          <q-item-section>Pessoas</q-item-section>
         </q-item>
       </q-list>
     </q-drawer>

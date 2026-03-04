@@ -18,3 +18,19 @@ api.interceptors.request.use(
         return Promise.reject(error instanceof Error ? error : new Error(String(error)));
     }
 );
+
+// Interceptor para capturar erros de resposta (Ex: Token Expirado = 401)
+api.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error: unknown) => {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+            localStorage.removeItem('access_token');
+            if (window.location.hash !== '#/login') {
+                window.location.href = '#/login';
+            }
+        }
+        return Promise.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+);
